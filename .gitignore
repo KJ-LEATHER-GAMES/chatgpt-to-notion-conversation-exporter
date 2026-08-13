@@ -1,0 +1,19 @@
+node_modules/
+dist/
+
+.env
+.env.*
+!.env.example
+
+*.log
+
+# Local technical-spike evidence
+spikes/**/local-raw/
+spikes/**/evidence/raw/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Optional editor state
+.vscode/
