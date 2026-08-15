@@ -7,7 +7,7 @@
 - TV-001 Standard Chat Message DOM: **PASS**
 - TV-002 Standard Chat Title: **PASS**
 - TV-003 Standard Coverage Discovery: **COMPLETE**
-- TV-003 Standard Coverage Candidate Decision: **NOT STARTED**
+- TV-003 Standard Coverage Candidate Decision: **COMPLETE**
 - TV-003 Standard Coverage Verdict: **NOT SET**
 - TV-003 Project Coverage: **NOT OBSERVED / OUT OF SCOPE**
 - TV-003 Overall Final Verdict: **PENDING**
@@ -341,3 +341,346 @@ None。
 追加探索や実装へ進まず、次Roundで`TV-003 Standard Coverage Candidate Decision`を実施する。
 
 Candidate Decisionでは、Primary extraction source、structurally distinct cross-check、route / ID cardinality、observed-format boundary、currentness predicate、Fail Closed invariants、confirmed fallbackの有無、PoC Entry CriteriaをEvidenceから決める。Standard Coverage Final Verdict、TV-003 Overall Final Verdict、Project coverage、Production parser / validatorはまだ開始しない。
+
+## TV-003 Standard Coverage Candidate Decision — 2026-08-15
+
+### Status / Scope
+
+- TV-003 Standard Coverage Discovery: **COMPLETE**
+- TV-003 Standard Coverage Candidate Decision: **COMPLETE**
+- TV-003 Standard Coverage Verdict: **NOT SET**
+- TV-003 Project Coverage: **NOT OBSERVED / OUT OF SCOPE**
+- TV-003 Overall Final Verdict: **PENDING**
+- TASK-001 Final Exit: **NOT YET MET**
+- PoC implementation: not started
+- Production implementation: none
+
+このDecisionは、TASK-001 Phase 0 Minimal PoCで検証するStandard Chat acquisition strategyだけを確定する。Production canonical source、Production selector / fallback chain、Project Chat strategy、TV-003 Final Verdictは確定しない。
+
+Technical Validation PlanはTV-003 Formal PassをStandard / Project双方に設定し、Development BacklogのTASK-001 ExitはStandard Chat Message / Title / Conversation IDを対象とする。このTraceability gapは維持し、Source-of-Truth文書を変更していない。
+
+### Decision Basis
+
+このDecisionは、このファイルのDiscovery Observed Factsだけに基づく。追加DOM探索、追加live observation、未観察candidate / attribute / fallback、Internal API、private network、React private stateは使用していない。
+
+Primary traceability: FR-004、FR-011、ADR-014、ADR-006、AT-004、RISK-029。FR-031は将来impactだけであり、差分保存identity semanticsは決定しない。
+
+### Ground Truth Status
+
+`GROUND_TRUTH EXACT VALUE INDEPENDENCE: ESTABLISHED`
+
+- CID-A / CID-B exact expected IDはcandidate observation前のuser-provided validation oracle。
+- Both observed lengths: 36。
+- CID-A / CID-B distinctness: true。
+- Candidate surfaceからGround Truthを生成、変更、自己承認しない。
+- Raw ID、raw URL、raw pathnameをEvidence、log、fixtureへ永続化しない。
+
+### Source Grouping and Decision Roles
+
+#### `CurrentDocumentRouteSurface`
+
+- C-01 browser tab URL: Primary URL source。
+- C-02 `location.href`: same source groupのrequired consistency surface。
+- C-03 `location.pathname`: observed route / ID parsingとpathname consistency surface。
+- C-04 `document.URL`: same source groupのrequired consistency surface。
+
+C-01〜C-04は4 independent sourcesではない。C-02〜C-04をC-01 unavailable / unsupported時のfallbackにしない。
+
+#### `ActiveConversationItemSurface`
+
+- C-05 current-route active sidebar anchor `href`: required current-binding / ID cross-check。
+- C-06 same active item subtreeの`data-conversation-options-trigger`: required source-internal machine-readable ID cross-check。
+
+C-05 / C-06は同じactive item由来であり、互いをindependent fallbackとは数えない。このgroupはPrimary route groupとはstructurally distinctなrequired validation surfaceとして扱う。
+
+#### `HeadRouteMetadataSurface`
+
+- C-07 canonical link: required cross-check。
+- C-08 `og:url`: Conversation route / IDを保持しなかったためreject。
+
+Canonicalが他groupと異なるinternal data-generation pathを持つことは証明していない。それでも、A → B transitionでprevious IDを保持しPrimary targetと不一致になったObserved Factがあるため、Phase 0 PoC accept predicateのrequired cross-checkとして有効である。
+
+#### `ConversationMainMetadataSurface`
+
+- C-09 screenshot-related metadata: emptyでID candidate不成立。
+- C-10 standalone ID metadata: not found。
+
+未観察Main DOM fallbackは追加しない。
+
+### Candidate Decision Table
+
+| Candidate | Source group | Decision | Role in TASK-001 TV-003 PoC | Evidence / limitation |
+|---|---|---|---|---|
+| C-01 Current browser tab URL | `CurrentDocumentRouteSurface` | **ADOPT FOR TASK-001 TV-003 POC** | Primary URL source。Observed Standard routeからIDを一意に分離 | FR-004がcurrent browser tabを要求。A / B、reload、navigation、Back / Forward、direct loadでGT exact |
+| C-02 `location.href` | `CurrentDocumentRouteSurface` | **SOURCE-INTERNAL CONSISTENCY** | C-01 / C-04とのcurrent route equalityをrequired検証 | Same source group。C-01欠落時fallbackではない |
+| C-03 `location.pathname` | `CurrentDocumentRouteSurface` | **SOURCE-INTERNAL CONSISTENCY** | Observed route shapeとsingle ID segmentのparse surface | Production route grammarではなくPhase 0 observed shape限定 |
+| C-04 `document.URL` | `CurrentDocumentRouteSurface` | **SOURCE-INTERNAL CONSISTENCY** | C-01 / C-02とのcurrent route equalityをrequired検証 | Same source group。independent oracleではない |
+| C-05 active sidebar anchor `href` | `ActiveConversationItemSurface` | **REQUIRED CROSS-CHECK** | Current-route `data-active` binding、anchor route ID、Primary equality | Settled時exactly 1。transition中0を観察 |
+| C-06 active item nested ID metadata | `ActiveConversationItemSurface` | **REQUIRED CROSS-CHECK** | Active item内exactly 1、non-empty、anchor ID / Primary ID equality | C-05と同じactive item。Inventory fallbackではない |
+| C-07 canonical link | `HeadRouteMetadataSurface` | **REQUIRED CROSS-CHECK** | Exactly 1、single valid ID、Primary / Active equality | Settled時GT exact。A → B immediateでprevious IDを保持しmismatch検出に寄与 |
+| C-08 `og:url` | `HeadRouteMetadataSurface` | **REJECT** | None | Observed elementはConversation route / IDを保持しなかった |
+| C-09 screenshot-related empty metadata | `ConversationMainMetadataSurface` | **REJECT** | None | Observed values empty、expected candidate 0 |
+| C-10 main standalone ID metadata | `ConversationMainMetadataSurface` | **NOT AVAILABLE** | None | Observed DOMでnot found。未観察fallbackを作らない |
+
+Message / Turn scoped identity、Title、本文、sidebar inventory全体はConversation ID acquisition sourceとして使用しない。
+
+### Primary Decision
+
+**Option A — `CurrentDocumentRouteSurface` PrimaryをADOPT FOR TASK-001 TV-003 POC。**
+
+1. Current browser tab URLをPrimary URL sourceとする。
+2. Raw URL文字列全体をConversation identityにはしない。
+3. Browser tab URLのobserved Standard Conversation routeから、exactly 1のID segmentを分離した値をPrimary resolved IDとする。
+4. `location.href` / `location.pathname` / `document.URL`はsame source groupのrequired consistency surfacesでありfallbackではない。
+5. ActiveConversationItemとcanonicalはPrimaryをrequired cross-checkする。
+
+Rationale:
+
+- FR-004はURLをcurrent browser tabから取得することをMustとしている。
+- CID-A / CID-Bでindependent GT exact、same Conversation reloadでstable、A / B navigation、Back / Forward、direct loadでcurrent targetへ追従した。
+- Routeはtransition中にactive item / canonicalより先行することがあるが、Primary単独acceptを禁止しrequired cross-checkを満たすまでFail Closedできる。
+
+**Option B — ActiveConversationItem PrimaryはREJECT as Primary。**
+
+Active itemはcurrent bindingを確認するrequired cross-checkとして重要だが、reload、direct load、A / B transitionで0件のsnapshotを観察した。またFR-004のcurrent browser tab URL requirementを置き換えない。Active item unavailable時にPrimary routeだけでsilent successすることも、active itemだけでsuccessすることも禁止する。
+
+### Browser Tab URL Contract
+
+1. Current browser tab URLはrequired、present、parseableでなければならない。
+2. Observed Standard Conversation route shape v1として、pathnameのnon-empty segmentsがexactly 2、first segmentがobserved literal `c`、second segmentがsingle Conversation ID candidateであることを要求する。
+3. IDはpathnameのobserved position以外から推測しない。Query、fragment、Title、Message、Turn metadataをID sourceにしない。
+4. Browser tab URL、`location.href`、`document.URL`はcurrent routeとしてexact consistencyを要求する。
+5. `location.pathname`は各parsed URLのpathnameと一致し、same observed route shape / IDを表すことを要求する。
+6. Browser tab URL unavailable / unsupported / page URL mismatchではFail Closedする。
+7. `location.href` / `document.URL`をBrowser tab URL欠落時のfallbackにしない。
+
+このcontractはPhase 0 PoC strategyであり、Production永久route grammarではない。Unobserved query / fragment variationをalternate ID sourceとして許可しない。
+
+### ActiveConversationItem Decision
+
+PoC accept時に以下をすべてrequiredとする。
+
+1. Primary current routeにsame-origin / same-pathでbindするsidebar anchor scopeを使用する。
+2. そのscope内で`data-active`を持つcurrent-route anchorがexactly 1。
+3. Active anchor `href`がobserved Standard Conversation route shapeで、IDをexactly 1分離できる。
+4. Active anchor subtree内の`data-conversation-options-trigger` candidateがexactly 1。
+5. Nested ID metadataがnon-emptyかつObserved Format v1に一致する。
+6. Active anchor route ID === nested ID metadata。
+7. Active anchor route ID === Primary route ID。
+
+Sidebar inventory全体からexpected-looking valueを探索・選択する方式は**REJECT**。Current active bindingがないinventory candidateをfallbackにしない。
+
+### Canonical Decision
+
+**Option C1 — C-07 canonicalをREQUIRED CROSS-CHECKとしてADOPT FOR TASK-001 TV-003 POC。**
+
+Accept時に以下を要求する。
+
+1. `link[rel="canonical"]` count exactly 1。
+2. Canonicalがobserved Standard Conversation route shapeである。
+3. CanonicalからIDをexactly 1分離できる。
+4. Canonical IDがObserved Format v1に一致する。
+5. Canonical ID === Primary route ID === ActiveConversationItem ID。
+
+Option C2 diagnostic-onlyはrejectする。A → B immediateでcanonicalがprevious CID-Aを保持し、target CID-B Primaryと不一致になるstateを実観察したため、required化によりnot-settled / stale stateのacceptを追加防止できる。Canonicalはfallbackでもindependent Ground Truthでもない。
+
+### Observed Format Decision
+
+`Observed Standard Conversation ID Format v1`を**ADOPT FOR TASK-001 TV-003 POC**する。
+
+Required predicate:
+
+- String length exactly 36。
+- Hyphen positions exactly 8、13、18、23（zero-based）。
+- Hyphen以外のpositionsはlowercase hexadecimal charactersだけ。
+- Empty、uppercase、別length、別hyphen position、その他characterはPoC v1でFail Closed。
+
+このpredicateはID sourceではなくmalformed / unexpected valueを検出するPhase 0補助validationである。UUID version / variant semantics、UUID library一般validation、Project Chat format、Production永久仕様を意味しない。
+
+### Runtime Currentness Predicate
+
+Ground Truthやprevious IDを知らないruntimeでは、次をすべて満たすsnapshotだけを`RESOLVED_CURRENT`としてacceptする。
+
+1. Current browser tab URLがpresent / parseable。
+2. Browser tab URLがObserved Standard Conversation Route Shape v1。
+3. Primary ID segmentをexactly 1分離可能、non-empty、Observed Format v1一致。
+4. Browser tab URL / `location.href` / `document.URL`がcurrent routeとしてexact consistency。
+5. `location.pathname`がsame pathname / route / Primary IDを表す。
+6. Current-route `data-active` sidebar anchor exactly 1。
+7. Active anchorがPrimary current routeへsame-origin / same-pathでbind。
+8. Active anchor route IDをexactly 1分離可能、non-empty、Observed Format v1一致。
+9. Active anchor subtree内nested ID metadata exactly 1、non-empty、Observed Format v1一致。
+10. Active anchor route ID === nested ID metadata === Primary route ID。
+11. Canonical link exactly 1、observed Standard routeからID exactly 1、non-empty、Observed Format v1一致。
+12. Canonical ID === Primary ID === ActiveConversationItem ID。
+13. Required source groupのいずれにもmissing、ambiguous、unsupported、inconsistent stateがない。
+
+Required conditionsの一部だけがresolvedしてもacceptしない。Specific generic literal、previous raw ID、GT、fixed sleep、elapsed durationはruntime predicateへ使用しない。
+
+### State Classification
+
+| State | Meaning | Accept |
+|---|---|---:|
+| `RESOLVED_CURRENT` | 全required cardinality、route binding、format、source-internal / cross-group equalityが成立 | Yes |
+| `UNSUPPORTED_ROUTE` | Browser tab URLがobserved Standard Conversation route shapeではない | No |
+| `UNRESOLVED` | Required source / IDがmissing、empty、またはcurrentnessを証明不能 | No |
+| `AMBIGUOUS` | Required candidate / IDを2+検出し一意解決不能 | No |
+| `INCONSISTENT` | Required surfacesは存在するがroute binding、URL、ID、format、cross-group valueが矛盾 | No |
+| `STALE` | Independent GTまたはknown navigation relationでprevious value保持を証明できるSpike diagnostic | No。Production runtimeではraw previous valueに依存せず`INCONSISTENT` / `UNRESOLVED`でreject |
+
+Production error enum / precedence / mappingは実装・確定しない。Cross-group ID mismatchはfuture `CONVERSATION_ID_MISMATCH` candidateとしてAT-004へtraceする。
+
+### Transient Classification
+
+| Observed snapshot | Runtime classification | Accept |
+|---|---|---:|
+| Reload return: route current、canonical current、active item 0 | `UNRESOLVED` | No |
+| Direct Load return: route current、canonical current、active item 0 | `UNRESOLVED` | No |
+| A → B immediate: route target B、active item 0、canonical previous A | `INCONSISTENT` + `UNRESOLVED`; `STALE` diagnostic | No |
+| B → A immediate: route target A、active item 0、canonical != target | `INCONSISTENT` + `UNRESOLVED` | No |
+| Settled A / B: all required surfaces current and equal | `RESOLVED_CURRENT` candidate | Yes only after runtime predicate; Spike PASS additionally requires GT exact |
+
+No polling / retry / timeout / fixed sleep / settled algorithm is defined by this Decision。
+
+### Cardinality / Consistency Contract
+
+| Scope | Required cardinality / consistency |
+|---|---|
+| Browser tab URL | exactly 1 runtime value、present、parseable、supported observed route |
+| Page route surfaces | `location.href` exactly 1、`document.URL` exactly 1、`location.pathname` present、Primary current routeとconsistent |
+| Primary route ID | exactly 1、non-empty、Observed Format v1 |
+| Current-route active anchor | exactly 1 with `data-active` binding |
+| Active anchor route ID | exactly 1、non-empty、Observed Format v1、Primary ID exact |
+| Nested ID metadata | exactly 1 within active anchor、non-empty、Observed Format v1、anchor / Primary ID exact |
+| Canonical | exactly 1、single non-empty valid ID、Primary / Active ID exact |
+| Cross-group | Primary === Active anchor === Nested metadata === Canonical |
+
+### Fail Closed Invariants
+
+| Condition | Decision treatment |
+|---|---|
+| Browser tab URL unavailable / empty / unparseable | Fail Closed: `UNRESOLVED` |
+| Unsupported / non-Conversation route | Fail Closed: `UNSUPPORTED_ROUTE` |
+| Primary ID segment 0 / empty | Fail Closed: `UNRESOLVED` |
+| Primary ID segment 2+ / path ambiguous | Fail Closed: `AMBIGUOUS` |
+| Any resolved ID observed-format mismatch | Fail Closed: `INCONSISTENT` / invalid candidate |
+| Browser tab URL / page URL mismatch | Fail Closed: `INCONSISTENT` |
+| Active item 0 | Fail Closed: `UNRESOLVED` |
+| Active item 2+ | Fail Closed: `AMBIGUOUS` |
+| Active anchor current-route binding false | Fail Closed: `INCONSISTENT` |
+| Active anchor route ID missing / empty | Fail Closed: `UNRESOLVED` |
+| Active anchor route ID ambiguous | Fail Closed: `AMBIGUOUS` |
+| Nested ID metadata 0 / empty | Fail Closed: `UNRESOLVED` |
+| Nested ID metadata 2+ | Fail Closed: `AMBIGUOUS` |
+| Active href ID / nested ID mismatch | Fail Closed: `INCONSISTENT` |
+| Primary route ID / ActiveConversationItem ID mismatch | Fail Closed: `INCONSISTENT`; future AT-004 error candidate |
+| Canonical 0 / ID missing / empty | Fail Closed: `UNRESOLVED` |
+| Canonical 2+ / multiple ID candidates | Fail Closed: `AMBIGUOUS` |
+| Canonical ID invalid / Primary mismatch | Fail Closed: `INCONSISTENT`; future AT-004 error candidate |
+| 一方のrequired source groupだけresolved | Fail Closed: `UNRESOLVED` / `INCONSISTENT` |
+| Currentnessを一意に確認不能 | Fail Closed |
+
+Silent selection、previous ID利用、sidebar inventory fallback、canonical-only success、Active-only success、Message / Turn identity流用、Title / body inference、URL推測生成を禁止する。
+
+### Ground Truth vs Runtime Currentness Separation
+
+#### Runtime currentness
+
+Runtime currentnessはrequired sourceのcardinality、route binding、Observed Format v1、source-internal consistency、cross-group equalityだけで判定する。Ground Truthやprevious raw IDを使用しない。
+
+#### Technical Spike Ground Truth comparison
+
+Minimal PoC case PASSには次の両方を要求する。
+
+1. Runtime currentness result = `RESOLVED_CURRENT`。
+2. Resolved ID === independent CID-A / CID-B expected ID。
+
+すべてのruntime sourceが同じwrong / truncated / stale IDで一致しruntime predicateだけを満たすsynthetic caseでも、independent Ground Truth exact=falseならTechnical Spike caseはPASSにしない。Candidate surfaceをoracleにしない。
+
+### Fallback Decision
+
+`CONFIRMED FALLBACK: NONE`
+
+- Browser tab URL欠落 / unsupported時に`location.href` / `document.URL`へfallbackしない。
+- Active bindingのないsidebar inventoryからIDを選ばない。
+- Canonicalだけ、Active itemだけ、Primaryだけでsuccessにしない。
+- Message ID、Turn ID、ordinalをConversation IDへ流用しない。
+- Title、body、observed formatからIDを推測しない。
+- Raw URL全体をidentityにしない。URLを推測生成しない。
+- Required source欠落 / ambiguity / mismatchはFail Closedする。
+
+### Blocking / Non-blocking Questions
+
+#### Blocking for Minimal PoC entry
+
+None。
+
+- Primary、required cross-check、Browser tab URL requirement、route / active binding、cardinality、cross-group equality、format、currentness、Fail Closed、Ground Truth separation、fallbackを既存Evidenceから確定できた。
+- AT-004 mismatch detection materialとしてPrimary / Active / canonicalのcross-group equalityが成立する。
+- Project coverageへ越境せずStandard strategyを決定できた。
+
+#### Non-blocking / deferred
+
+- Production error enum / mapping / precedence。
+- Production selector / canonical source / fallback chain。
+- Polling / retry / timeout / general settled algorithm。
+- Unobserved query / fragment variation、Settings、New Chat ID未確定、malformed live route、browser/page mismatch live case。
+- Sidebar unloaded / virtualized一般解、additional viewport。
+- DOM source groupsのinternal generation independence。
+- Project Chat route / ID format / strategy。
+- TV-003 Standard Coverage Verdict、TV-003 Overall Final Verdict、TASK-001 Exit。
+
+### PoC Entry Criteria
+
+| Entry criterion | Status |
+|---|---:|
+| 1. Primary source確定 | MET — C-01 / Option A |
+| 2. Required cross-check確定 | MET — ActiveConversationItem + canonical C1 |
+| 3. Browser tab URL requirement確定 | MET — required、no fallback |
+| 4. Current route binding contract確定 | MET |
+| 5. Route / ID cardinality確定 | MET |
+| 6. Source-internal consistency確定 | MET |
+| 7. Cross-group equality確定 | MET |
+| 8. Observed-format contract採否確定 | MET — Observed Standard Conversation ID Format v1 |
+| 9. Runtime currentness predicate確定 | MET |
+| 10. Ground Truth comparator分離 | MET |
+| 11. Fail Closed invariants確定 | MET |
+| 12. Confirmed fallback有無確定 | MET — NONE |
+| 13. A / B independent Ground Truth available | MET |
+| 14. Raw URL / ID persistence禁止 | MET |
+| 15. PoC scopeを`spikes/`配下に限定 | REQUIRED |
+
+Minimal PoCはsingle snapshot capture / evaluator / independent GT comparatorへ分離できる。Automated waitingを追加する場合は、PoC実装前にsampling / termination contractを別途明示する。このDecisionはwaiting algorithmを含まない。
+
+### Known Limitations
+
+- Standard Chat 2 cases。
+- Chrome 151、current ChatGPT UI、1 primary viewport。
+- Project Chat未観察。
+- Settings未観察。
+- New Chat ID未確定state未観察。
+- Malformed / ambiguous live route未観察。
+- Browser tab URL / page URL mismatch live case未観察。
+- Sidebar unloaded / virtualized一般解未検証。
+- Additional viewport未検証。
+- DOM source groupsのinternal generation independence未証明。
+- General settled condition、polling、retry、timeout未設計。
+- Production selector / fallback chain未決定。
+
+これらをTV-003 Standard Coverageの新しいFormal Pass条件へ昇格させない。
+
+### Requirement / ADR / Risk Impact
+
+- **FR-004**: Current browser tab URLをPhase 0 Primaryとし、supported observed route / ID consistencyをrequired化した。URL全体をidentityにせず、URL推測生成を禁止した。
+- **FR-011**: Conversation ID / URL required metadataを一意に解決・整合確認できないsnapshotはFail ClosedするDecisionとなった。Production保存処理は未実装。
+- **ADR-014**: URLはcurrent-tab / navigation source、分離したConversation IDはsystem identity candidateとして区別する。Message / Turn identityを流用しない。
+- **ADR-006**: Missing、ambiguous、unsupported、format invalid、cross-group mismatch、stale transitionをsilent acceptしない。
+- **AT-004**: Primary / Active / canonical ID mismatchをfuture `CONVERSATION_ID_MISMATCH` candidateへtraceできる。Production error mapping自体は未決定。
+- **RISK-029**: Structurally distinct surfacesとstrict Fail Closed predicateをPoCで検証可能になった。ChatGPT UI変更、availability、format drift、Production orchestration riskは残る。
+- **FR-031**: 将来Conversation identity利用に関係するが、persistence / diff-save semanticsは未決定。
+
+### Recommended Next Action
+
+次Roundで`TV-003 Standard Coverage Minimal PoC`を、`spikes/TASK-001-standard-chat-dom/`配下だけに必要最小限実装する。
+
+PoCは、Browser tab URL capture、same-group page route consistency、ActiveConversationItem required cross-check、canonical required cross-check、Observed Format v1、Runtime Currentness evaluator、independent Ground Truth comparator、Fail Closed self-testを分離する。追加live探索、Production selector / fallback、Project coverage、Final Verdictへは進まない。
