@@ -3,7 +3,7 @@
 
 - **Target**: MVP v1.0
 - **Status**: Draft
-- **Last Reviewed**: 2026-08-12
+- **Last Reviewed**: 2026-08-16
 
 Codexへは原則としてTask単位で依頼する。  
 Baseline化前はPhase 0以外の実装を確定作業として扱わない。
@@ -18,10 +18,12 @@ Baseline化前はPhase 0以外の実装を確定作業として扱わない。
 - **Exit**: Standard ChatのMessage / Title / Conversation ID取得方式をPASS判定
 
 ## TASK-002 Project Chat DOM Spike
-- **Refs**: TV-004
-- **Risk**: RISK-003, RISK-004
+- **Refs**: TV-003, TV-004
+- **Risk**: RISK-003, RISK-004, RISK-029
 - **Depends On**: TASK-001
-- **Exit**: Source detectionとProject Name取得をPASS
+- **Exit**:
+  - TV-004: Source detectionとProject Name取得をPASS
+  - TV-003: Project CoverageをPASS
 
 ## TASK-003 Long Conversation / Completeness Spike
 - **Refs**: TV-005, TV-006
