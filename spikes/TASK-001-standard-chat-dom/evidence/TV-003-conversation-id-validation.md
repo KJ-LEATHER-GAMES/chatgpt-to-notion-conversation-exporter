@@ -8,13 +8,14 @@
 - TV-002 Standard Chat Title: **PASS**
 - TV-003 Standard Coverage Discovery: **COMPLETE**
 - TV-003 Standard Coverage Candidate Decision: **COMPLETE**
+- TV-003 Standard Coverage Minimal PoC: **COMPLETE / PASS**
 - TV-003 Standard Coverage Verdict: **NOT SET**
 - TV-003 Project Coverage: **NOT OBSERVED / OUT OF SCOPE**
 - TV-003 Overall Final Verdict: **PENDING**
 - TASK-001 Final Exit: **NOT YET MET**
 - Production implementation: none
 
-No Candidate Decision, PoC, Production parser, or validator was implemented in this round.
+Phase 0 Candidate Decision and Minimal PoC are complete. Production parser / validator implementation remains none.
 
 ## Formal Validation Scope
 
@@ -684,3 +685,240 @@ Minimal PoCはsingle snapshot capture / evaluator / independent GT comparatorへ
 次Roundで`TV-003 Standard Coverage Minimal PoC`を、`spikes/TASK-001-standard-chat-dom/`配下だけに必要最小限実装する。
 
 PoCは、Browser tab URL capture、same-group page route consistency、ActiveConversationItem required cross-check、canonical required cross-check、Observed Format v1、Runtime Currentness evaluator、independent Ground Truth comparator、Fail Closed self-testを分離する。追加live探索、Production selector / fallback、Project coverage、Final Verdictへは進まない。
+
+## TV-003 Standard Coverage Minimal PoC Result — 2026-08-15
+
+### Status
+
+- TV-003 Standard Coverage Discovery: **COMPLETE**
+- TV-003 Standard Coverage Candidate Decision: **COMPLETE**
+- TV-003 Standard Coverage Minimal PoC: **COMPLETE / PASS**
+- TV-003 Standard Coverage Verdict: **NOT SET**
+- TV-003 Project Coverage: **NOT OBSERVED / OUT OF SCOPE**
+- TV-003 Overall Final Verdict: **PENDING**
+- TASK-001 Final Exit: **NOT YET MET**
+- Production implementation: none
+
+このResultはPhase 0 Minimal PoCの実装・self-test・Standard Chat live validationだけを記録する。Candidate Decision、Standard Coverage Final Verdict、Overall Final Verdictは変更しない。
+
+### PoC Revision
+
+`tv003-conversation-id-minimal-poc-v1`
+
+### Implementation Scope
+
+Created:
+
+- `spikes/TASK-001-standard-chat-dom/poc/tv003-conversation-id-poc.mjs`
+- `spikes/TASK-001-standard-chat-dom/poc/tv003-conversation-id-poc.selftest.mjs`
+
+PoC responsibilities were separated into:
+
+1. Browser-independent page snapshot capture。
+2. Pure Observed Route Shape v1 parser。
+3. Pure Observed ID Format v1 validator。
+4. Pure runtime currentness evaluator。
+5. Independent Runtime Ground Truth comparator。
+6. Evidence-safe summary generator。
+7. Technical Spike case evaluator。
+
+Current browser tab URLはChrome harnessから取得し、page execution contextの`location.href` / `document.URL`を複製して代用していない。Browser tab URL、page raw URL、pathname、resolved ID、expected IDはRuntime memory内だけで使用した。
+
+Implemented neither Production Adapter / parser / validator / error enum / selector abstraction / fallback chain nor Project Chat support。
+
+### Evidence Provenance Gate
+
+**PASS**
+
+- `Route Shape v1 provenance: confirmed from pre-existing observation`。
+  - Candidate Decision作成前のRuntime observation logicはpathname non-empty segments exactly 2、first segmentがobserved literal `c`であることを判定していた。
+  - CID-A / CID-Bのpre-existing resultは両方`routeShape=true`、single ID segmentを記録していた。
+- `Active route origin binding provenance: confirmed from pre-existing observation`。
+  - Candidate Decision作成前のRuntime observation logicはactive anchor candidateをcurrent page routeとsame-origin / same-pathに限定していた。
+  - Settled CID-A / CID-Bでcurrent-route active anchor exactly 1、current binding=trueを記録していた。
+
+Candidate Decision自身をObserved Factのoracleとして使用していない。新しいroute grammar、attribute、fallbackを推測していない。
+
+### Environment
+
+- Date: 2026-08-15
+- Browser: Chrome 151
+- UI: ChatGPT current UI
+- Cases: two user-designated Standard Chats, CID-A / CID-B
+- Viewport coverage: one primary viewport
+- Automated settled detection: **NOT IMPLEMENTED**
+- Polling / retry / timeout / fixed sleep / debounce / MutationObserver settle logic: none
+
+### Self-test Result
+
+Commands:
+
+- `node --check spikes/TASK-001-standard-chat-dom/poc/tv003-conversation-id-poc.mjs` — PASS
+- `node --check spikes/TASK-001-standard-chat-dom/poc/tv003-conversation-id-poc.selftest.mjs` — PASS
+- `node spikes/TASK-001-standard-chat-dom/poc/tv003-conversation-id-poc.selftest.mjs` — PASS, 39 assertion groups
+
+Coverage included:
+
+- Valid complete snapshot / same-source equality / GT exact / Technical Spike PASS。
+- Unsupported route、missing / malformed browser URL、missing / malformed / ambiguous Primary ID、page URL / pathname mismatch。
+- Active anchor 0 / 2+、binding false、anchor ID missing / malformed、nested ID 0 / 2+ / empty / malformed、internal / Primary mismatch。
+- Canonical 0 / 2+ / malformed / Primary mismatch。
+- Format v1 wrong length、uppercase、wrong hyphen position、invalid character、empty without repair。
+- Primary-only / Active-only / canonical-only / one-required-group-missing no-fallback behavior。
+- All runtime sources agreeing on one valid but wrong ID while independent GT differs。
+- Invalid Ground Truth input。
+
+The required negative case passed:
+
+- Runtime currentness: `RESOLVED_CURRENT`
+- Runtime sources: internally equal
+- Independent GT exact: false
+- Technical Spike `casePass`: false
+
+### Route / Format Contract Result
+
+#### Observed Standard Conversation Route Shape v1
+
+- URL parseable: required。
+- Pathname non-empty segments exactly 2: enforced。
+- First segment observed literal `c`: enforced。
+- Second segment exactly 1 ID candidate: enforced。
+- Extra pathname segment: not ignored; ambiguous / Fail Closed in self-test。
+- Query / fragment: not used as an ID source。
+- Browser tab URL / page URL whole-string exact consistency: enforced。
+- `location.pathname` / parsed pathname exact consistency: enforced。
+
+#### Observed Standard Conversation ID Format v1
+
+- Length exactly 36: enforced。
+- Zero-based hyphen positions 8 / 13 / 18 / 23: enforced。
+- All other positions lowercase hexadecimal only: enforced。
+- No trim、lowercase normalization、repair、UUID version / variant semantics、UUID library generalization。
+
+All resolved live IDs satisfied both Phase 0 contracts。
+
+### Validation Matrix
+
+| Case | Runtime state | Browser / page route consistency | Active anchor | Active binding / internal equality | Canonical | Cross-group equality | Resolved length | GT exact | Case result |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| CID-A Initial settled | `RESOLVED_CURRENT` | true | 1 | true / true | 1 | true | 36 | true | PASS |
+| CID-A Reload settled | `RESOLVED_CURRENT` | true | 1 | true / true | 1 | true | 36 | true | PASS |
+| CID-A Direct Load settled, independent run | `RESOLVED_CURRENT` | true | 1 | true / true | 1 | true | 36 | true | PASS |
+| A → B settled | `RESOLVED_CURRENT` | true | 1 | true / true | 1 | true | 36 | true | PASS |
+| B → A settled | `RESOLVED_CURRENT` | true | 1 | true / true | 1 | true | 36 | true | PASS |
+| Back A → B settled | `RESOLVED_CURRENT` | true | 1 | true / true | 1 | true | 36 | true | PASS |
+| Forward B → A settled | `RESOLVED_CURRENT` | true | 1 | true / true | 1 | true | 36 | true | PASS |
+
+Settled result: **7 / 7 PASS**。
+
+CID-A InitialとCID-A Direct Loadは別runとして実行した。DOM candidateからexpected IDを生成していない。
+
+### Transient Snapshot Result
+
+Natural single snapshotsだけを取得した。Transient capture用のsleep / polling / retryは使用していない。
+
+| Snapshot | State | Active count | Canonical / Primary | Violation codes | Erroneous accept |
+|---|---|---:|---:|---|---:|
+| CID-A Direct Load return, independent run | `UNRESOLVED` | 0 | equal | `ACTIVE_ANCHOR_MISSING`, `NESTED_ID_MISSING` | No |
+| CID-A Reload return | `UNRESOLVED` | 0 | equal | `ACTIVE_ANCHOR_MISSING`, `NESTED_ID_MISSING` | No |
+| A → B immediate | `UNRESOLVED` | 0 | mismatch | above + `CANONICAL_PRIMARY_ID_MISMATCH` | No |
+| B → A immediate | `UNRESOLVED` | 0 | mismatch | above + `CANONICAL_PRIMARY_ID_MISMATCH` | No |
+
+- Captured transient snapshots: 4。
+- Erroneous `RESOLVED_CURRENT`: 0。
+- Resolved ID returned in Fail Closed states: 0。
+
+The runtime evaluator does not require or compare a previous raw ID. Discovery-only `STALE` relations remain diagnostic; runtime rejection was based on missing / inconsistent required surfaces。
+
+### Runtime Currentness Result
+
+- All 7 settled snapshots satisfied required Primary, page consistency, ActiveConversationItem, canonical, binding, cardinality, format, and cross-group equality invariants。
+- All 7 returned `RESOLVED_CURRENT` and non-null runtime ID internally。
+- Every captured transient violated required invariants, returned Fail Closed state, and exposed `resolvedId=null` internally。
+- Primary-only route current、canonical-only current、Active missing、partial cross-group agreement were not accepted。
+- Confirmed fallback remained `NONE`。
+
+### Ground Truth Comparison
+
+- CID-A / CID-B expected IDs remained the pre-observation user-provided independent oracle。
+- Expected lengths: 36 / 36。
+- Distinctness: true。
+- Settled exact comparisons: 7 / 7 true。
+- Transient resolved length: null; exact=false。
+- Candidate values were not promoted into expected values。
+- Evidence-safe summaries contained no raw expected / resolved ID or raw URL value。
+
+Technical Spike case PASS required both `RESOLVED_CURRENT` and independent GT exact=true。
+
+### Source Consistency
+
+Settled live results:
+
+- Browser tab URL present / parseable / supported: 7 / 7。
+- Browser tab URL === `location.href`: 7 / 7。
+- Browser tab URL === `document.URL`: 7 / 7。
+- `location.pathname` === parsed page pathname: 7 / 7。
+- Page IDs === Primary ID: 7 / 7。
+- Current-route active anchor exactly 1: 7 / 7。
+- Active same-origin / same-path binding=true: 7 / 7。
+- Active anchor ID === nested ID === Primary ID: 7 / 7。
+- Canonical exactly 1 and Canonical ID === Primary / Active ID: 7 / 7。
+
+The surfaces are structurally distinct validation groups; their internal ChatGPT data-generation independence remains unproven。
+
+### Fail Closed Result
+
+**PASS**
+
+- 39 self-test groups covered missing、ambiguous、unsupported、malformed、format-invalid、binding mismatch、cross-group mismatch、required-source partial resolution、invalid GT input。
+- Live direct-load / reload transition with active item 0: Fail Closed。
+- Live A → B / B → A transition with active item 0 and canonical mismatch: Fail Closed。
+- Runtime-equal but GT-wrong synthetic case: Technical Spike FAIL。
+- Silent selection、inventory fallback、canonical-only、Active-only、page-URL fallback、Message / Turn identity reuse: not implemented。
+
+### Requirement / ADR / Risk Impact
+
+- **FR-004**: Current browser tab URLをhost/browser boundaryから取得し、page URLs、active route、nested ID、canonicalとのconsistencyを検証できた。URL全体をidentityにせず、URL推測生成なし。
+- **FR-011**: Required Conversation ID / URL surfaceがmissing、ambiguous、invalid、inconsistentなsnapshotはsuccessful IDを返さなかった。Production save guardは未実装。
+- **ADR-014**: URL navigation sourceと分離したConversation ID system-key candidateを区別した。Message / Turn identityは流用していない。
+- **ADR-006**: Pure self-testと4 live transient snapshotsでFail Closedを再現した。
+- **AT-004**: Primary / Active / canonical mismatchを検出し、future `CONVERSATION_ID_MISMATCH` candidateへtrace可能。Production error mappingは未実装。
+- **RISK-029**: Current UIの2 Standard ChatsでCandidate strategyを再現し、stale / missing transitionをrejectできた。UI drift、source availability、format change、Production orchestration riskは残る。
+- **FR-031**: Future identity useに関係するが、persistence / diff-save identity semanticsは未検証。
+
+### Known Limitations
+
+- Standard Chat 2 cases。
+- Chrome 151、current ChatGPT UI、1 primary viewport。
+- Project Chat未観察。TV-003 Overall VerdictはPENDING。
+- Settings、New Chat ID未確定state、malformed / ambiguous live route、browser/page mismatch live caseは未観察。
+- Sidebar unloaded / virtualized一般解、additional viewport未検証。
+- DOM source groupsのinternal generation independence未証明。
+- Automated settled detection: **NOT IMPLEMENTED**。
+- Polling / retry / timeout / fixed sleep / debounce / MutationObserver settle logicなし。
+- Production selector / parser / validator / error mapping / fallback chain未決定・未実装。
+
+これらをStandard Coverage Formal Passへ新規追加せず、Final Reviewで既存Formal CriteriaとEvidenceを評価する。
+
+### Repository / Security Checks
+
+- `node --check` PoC: PASS。
+- `node --check` self-test: PASS。
+- Self-test execution: PASS, 39 groups。
+- `git diff --check`: PASS。
+- Direct trailing-whitespace scan: 0 findings。
+- Raw ChatGPT URL pattern: 0 findings。
+- Raw Conversation pathname pattern: 0 findings。
+- UUID / raw Conversation ID-like literal: 0 findings。
+- Credential / cookie / token / authorization pattern: 0 findings。
+- Evidence-safe runtime summary raw-value leak check: false。
+- `src/`, `docs/`, `AGENTS.md`: unchanged。
+- TV-001 Evidence / PoC: unchanged。
+- TV-002 Evidence / PoC: unchanged。
+- Changed scope: two new TV-003 PoC files and this TV-003 Evidence file only。
+
+### Recommended Next Action
+
+別Roundで`TV-003 Standard Coverage Final Review / Verdict`を実施する。
+
+Formal Criteria、independent GT、7 settled case results、4 transient Fail Closed results、self-test、Known Limitationsをレビューし、Standard CoverageだけのVerdictを決定する。TV-003 Overall Final Verdict、Project Coverage、TASK-001 Final Exitはまだ確定しない。
