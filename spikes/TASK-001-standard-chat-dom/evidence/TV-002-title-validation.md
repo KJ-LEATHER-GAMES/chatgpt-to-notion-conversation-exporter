@@ -3,15 +3,21 @@
 ## Status
 
 - Phase: Phase 0 Technical Spike
-- Scope: TASK-001 / TV-002 Discovery / Observation only
+- Scope: TASK-001 / TV-002 Discovery / Candidate Decision / Minimal PoC
 - Observation date: 2026-08-15 (Asia/Tokyo)
 - TV-001 Standard Chat Message DOM: **PASS**
-- TV-002 Standard Chat Title: **DISCOVERY COMPLETE / FINAL VERDICT NOT SET**
+- TV-002 Standard Chat Title: **MINIMAL POC PASS / FINAL VERDICT NOT SET**
+- TV-002 Discovery: **COMPLETE**
+- GT-A Reconciliation: **COMPLETE**
+- Candidate Decision v1: **COMPLETE**
+- Minimal PoC: **COMPLETE / PASS**
+- TV-002 Final Verdict: **NOT SET**
 - TV-003 Conversation ID: **NOT STARTED**
 - TASK-001 Final Exit: **NOT YET MET**
 - Production implementation: none
-- PoC implementation for TV-002: none
-- Canonical Title source / selector / fallback chain: not decided
+- Phase 0 PoC Primary / cross-check: **DECIDED**
+- Phase 0 PoC revision: `tv002-title-minimal-poc-v1`
+- Production canonical selector / fallback chain: **NOT DECIDED**
 - Chrome Version: 151.0.7922.109
 - ChatGPT UI build: not captured / unavailable
 
@@ -542,3 +548,181 @@ Minimal TV-002 PoCへ進む条件を次のとおり確定し、本Decision時点
 ### Recommended Next Action
 
 承認後、`spikes/TASK-001-standard-chat-dom/`配下だけでTV-002 Minimal PoCを計画・実装する。PoCはPrimary / cross-check / currentness predicate / Fail ClosedをA / Bの既存Validation Matrixで再現し、Raw TitleをEvidenceへ保存しない。TV-002 Final Verdict、TV-003、Production実装は開始しない。
+
+---
+
+## TV-002 Minimal PoC Result — 2026-08-15
+
+### Status
+
+- PoC revision: `tv002-title-minimal-poc-v1`
+- Minimal PoC result: **PASS**
+- TV-002 Final Verdict: **NOT SET**
+- Blocking issue: none
+- Production implementation: none
+
+### Implementation Scope
+
+追加したPhase 0専用file:
+
+- `poc/tv002-title-poc.mjs`
+  - Single-snapshot browser capture
+  - Runtime currentness evaluator
+  - Independent Runtime Ground Truth comparator
+  - Evidence-safe summary
+- `poc/tv002-title-poc.selftest.mjs`
+  - Pure evaluator / comparatorのcontract test
+
+TV-001 PoC、Production `src/`、docs、AGENTS.mdは変更していない。Polling、retry、timeout、fixed sleep、fallback、suffix stripping、Conversation ID extractionは実装していない。
+
+### Current-route Binding Implementation
+
+DiscoveryおよびGT-A Reconciliationで使用済みのpredicateだけを再現した。
+
+1. Current locationのpathnameとanchor destinationのpathnameが一致するanchorをscopeとする。
+2. そのscope内で`data-active`を持つitemをactive sidebar Title candidateとする。
+3. Active candidateがexactly 1で、同じpathname equalityが成立する場合だけ`currentRouteBound=true`とする。
+
+Raw href、pathname、Conversation IDは返却summary、Evidence、file logへ保存していない。ID extractionやroute componentの意味解釈は行っていない。
+
+### Environment
+
+- OS: Windows
+- Browser: Chrome 151.0.7922.109
+- ChatGPT UI build: not captured / unavailable
+- Validation source: authenticated live Standard Chat tabs
+- Ground Truth: GT-A length 48、GT-B length 12
+
+### Self-test Result
+
+- `node --check poc/tv002-title-poc.mjs`: PASS
+- `node --check poc/tv002-title-poc.selftest.mjs`: PASS
+- `node poc/tv002-title-poc.selftest.mjs`: PASS
+
+Pure self-test coverage:
+
+- All invariants true: `RESOLVED_CURRENT`
+- Visual-only clipping diagnostic + full DOM values: accepted
+- Active item 0 / 2+
+- Sidebar text empty / `aria-label` empty / internal mismatch
+- Current-route binding false
+- `head > title` 0 / 2+
+- Document Title empty / internal mismatch
+- Cross-source mismatch
+- Sidebar-only / Document-only resolution
+- Known DOM-value truncation
+- Both DOM sources agree on the same wrong or truncated value while independent Ground Truth mismatches
+- Invalid empty Ground Truth input
+
+Fail Closed contract cases: 14 / 14 PASS。Ground Truth separation caseではruntime currentnessが成立してもGT mismatchのためTechnical Spike caseはPASSにならなかった。
+
+### Validation Matrix
+
+同じ未変更PoCでsingle snapshot captureを実行した。Operation直後に自然に取得できたtransient snapshotと、明示的settled snapshotを分離した。
+
+| Case | State | Route bound | Sidebar internal | Document internal | Cross-source | Resolved length | GT exact | Result |
+|---|---|---|---|---|---|---:|---|---|
+| Title-A initial settled | `RESOLVED_CURRENT` | true | true | true | true | 48 | true | PASS |
+| Title-A reload settled | `RESOLVED_CURRENT` | true | true | true | true | 48 | true | PASS |
+| Title-A direct load settled | `RESOLVED_CURRENT` | true | true | true | true | 48 | true | PASS |
+| A → B settled | `RESOLVED_CURRENT` | true | true | true | true | 12 | true | PASS |
+| B → A settled | `RESOLVED_CURRENT` | true | true | true | true | 48 | true | PASS |
+| Back A → B | `RESOLVED_CURRENT` | true | true | true | true | 12 | true | PASS |
+| Forward B → A | `RESOLVED_CURRENT` | true | true | true | true | 48 | true | PASS |
+
+- Settled cases: 7
+- Settled PASS: 7
+- All settled runtime currentness: `RESOLVED_CURRENT`
+- All settled Ground Truth comparison: exact=true
+- A → B / Backでprevious GT-Aをcurrent resultとして返していない。
+- B → A / Forwardでprevious GT-Bをcurrent resultとして返していない。
+
+### Transient Snapshot Result
+
+| Operation | State | Active sidebar count | Document Title length diagnostic | GT exact | Fail Closed |
+|---|---|---:|---:|---|---|
+| Reload直後 | `UNRESOLVED` | 0 | 7 | false | true |
+| Direct Load直後 | `UNRESOLVED` | 0 | 7 | false | true |
+| A → B直後 | `UNRESOLVED` | 0 | 48 | false | true |
+| B → A直後 | `UNRESOLVED` | 0 | 12 | false | true |
+
+- Transient snapshots: 4
+- Fail Closed: 4 / 4
+- `RESOLVED_CURRENT`誤accept: 0
+- Specific generic literal、previous raw Title、特定lengthをruntime classification ruleに使用していない。
+
+各transient後のsettled確認は別の明示的single captureとして行った。Polling loop、fixed sleep、retry count、timeout、Production settled algorithmは追加していない。
+
+### Runtime Currentness Result
+
+Candidate Decision v1の9 invariantsを実装し、全settled caseで成立した。
+
+- Active sidebar Title item exactly 1
+- Current route binding=true
+- Sidebar DOM text non-empty
+- Sidebar `aria-label` non-empty
+- Sidebar internal exact equality=true
+- `head > title` exactly 1
+- `document.title` non-empty
+- Document internal exact equality=true
+- Cross-source exact equality=true
+
+Runtime currentnessとGround Truth comparisonは別resultとして保持した。Technical Spike case PASSには両方を要求した。
+
+### Ground Truth Comparison
+
+- GT-A expected length: 48
+- GT-A settled resolved length: 48
+- GT-A exact: true in Initial / Reload / Direct Load / B → A / Forward
+- GT-B expected length: 12
+- GT-B settled resolved length: 12
+- GT-B exact: true in A → B / Back
+- Candidate値からGround Truthを生成または更新していない。
+
+### Source Consistency
+
+- T-01 / T-02 `DocumentTitleSurface` internal equality: 7 / 7 settled cases true
+- T-04 / T-05 `ActiveSidebarTitleSurface` internal equality: 7 / 7 settled cases true
+- Active Sidebar / Document Title cross-source equality: 7 / 7 settled cases true
+- Confirmed fallback: none
+
+### Truncation Result
+
+- Title-Aは既存Discoveryで`DISPLAY_ONLY_TRUNCATED`と確認済み。
+- 今回のTitle-A settled casesではSidebar DOM text、`aria-label`、Document Titleがすべてlength 48でGT-A exact。
+- Visual-only clippingはFailureにしなかった。
+- General clipping detectorは実装していない。
+- DOM value自体がknown truncatedならpure evaluatorはFail Closedする。
+- 両DOM sourceが同じ誤値で一致するcaseはruntime predicateだけではacceptし得るが、independent Ground Truth mismatchによりTechnical Spike caseはFAILとなることをself-testした。
+
+### Fail Closed Result
+
+- Pure fail-closed contract: PASS
+- Live transient fail-closed: PASS
+- Source-internal mismatch / cross-source mismatch: pure self-test PASS
+- Candidate 0 / 2+: pure self-test PASS
+- One-source-only resolution: pure self-test PASS
+- Ground Truth mismatch: Technical Spike PASS禁止を確認
+- `META_TITLE_NOT_FOUND`相当のProduction error codeは実装していない。
+
+### Requirement / ADR / Risk Impact
+
+- **FR-011**: Standard Chat必須Titleを、current route bindingと2 underlying sourceの一致を要求して取得できるEvidenceを得た。不成立snapshotは成功扱いしない。
+- **ADR-006**: Missing、ambiguous、unbound、inconsistent、GT mismatchをFail ClosedするPoC contractを確認した。
+- **AT-009**: `META_TITLE_NOT_FOUND`相当へ結び付く失敗条件をpure testとlive transientで再現した。Production error実装はscope外。
+- **RISK-028**: Current Chrome / ChatGPT UIの2 Standard ChatsでPrimary / cross-check strategyを再現できた。UI変更risk自体は残る。
+- **TV-002**: Minimal PoCはPASS。Final Review / Final Verdictは別ターンで実施するため`NOT SET`を維持する。
+
+### Known Limitations
+
+- 2 Standard Chats、1 Chrome version、1 primary viewportでのvalidation。
+- Same-title Conversation navigation、Title rename中、sidebar item unloaded / virtualized、additional viewport variationは未検証。
+- Back / Forward APIはtransition完了まで待つ可能性があり、transient state不存在は証明していない。
+- Automated settled condition、polling、retry、timeoutは未設計。
+- Production selector、Production fallback chain、prefix / suffix strippingは未決定。
+- 両independent sourceが同じtruncated valueを返す未観察runtime caseの一般検知は未解決。Technical SpikeではIndependent Ground Truth comparisonで補足した。
+- TV-003 Conversation ID、Project Chatは未開始。
+
+### Recommended Next Action
+
+PoC Resultのレビュー後、追加DOM探索やコード変更を行わずTV-002 Final Review / Final Verdictを別ターンで実施する。TV-003、Production Adapter、`src/`実装はまだ開始しない。
