@@ -3,15 +3,15 @@
 ## Status
 
 - Phase: Phase 0 Technical Spike
-- Scope: TASK-001 / TV-002 Discovery / Candidate Decision / Minimal PoC
+- Scope: TASK-001 / TV-002 Discovery / Candidate Decision / Minimal PoC / Final Review
 - Observation date: 2026-08-15 (Asia/Tokyo)
 - TV-001 Standard Chat Message DOM: **PASS**
-- TV-002 Standard Chat Title: **MINIMAL POC PASS / FINAL VERDICT NOT SET**
+- TV-002 Standard Chat Title: **PASS**
 - TV-002 Discovery: **COMPLETE**
 - GT-A Reconciliation: **COMPLETE**
 - Candidate Decision v1: **COMPLETE**
 - Minimal PoC: **COMPLETE / PASS**
-- TV-002 Final Verdict: **NOT SET**
+- TV-002 Final Verdict: **PASS**
 - TV-003 Conversation ID: **NOT STARTED**
 - TASK-001 Final Exit: **NOT YET MET**
 - Production implementation: none
@@ -726,3 +726,201 @@ Runtime currentnessとGround Truth comparisonは別resultとして保持した�
 ### Recommended Next Action
 
 PoC Resultのレビュー後、追加DOM探索やコード変更を行わずTV-002 Final Review / Final Verdictを別ターンで実施する。TV-003、Production Adapter、`src/`実装はまだ開始しない。
+
+---
+
+## TV-002 Final Review and Verdict — 2026-08-15
+
+### Status
+
+- Scope: TASK-001 / TV-002 Standard Chat Title Final Review
+- Review basis: Technical Validation Plan TV-002、independent Runtime Ground Truth、Candidate Decision v1、Minimal PoC v1、self-test、live Evidence
+- TV-002 Final Verdict: **PASS**
+- Additional DOM exploration / live validation: not performed in this Final Review
+- PoC / Candidate Decision / selector / fallback changes: none
+- Production implementation: none
+- TV-003: not started
+
+### Review Basis
+
+Evidence hierarchyを次の順に区別して評価した。
+
+1. **Formal Technical Validation Criteria**
+   - Hypothesis: Current conversation titleを安定取得できる。
+   - Pass: reload / navigation後も一致する。
+2. **Independent Runtime Ground Truth**
+   - GT-A: length 48
+   - GT-B: length 12
+3. **Candidate Decision v1**
+   - Primary: `ActiveSidebarTitleSurface`
+   - Cross-source validation surface: `DocumentTitleSurface`
+   - Confirmed fallback: none
+4. **Minimal PoC v1 live result**
+   - 7 / 7 settled cases PASS
+   - 4 / 4 naturally captured transient snapshots Fail Closed
+5. **Pure self-test**
+   - Currentness predicate、Fail Closed、Ground Truth separation contractを検証
+6. **Known Limitations / Deferred scope**
+   - Formal Criteriaへ後付けせず、Verdictへのblocking relevanceを個別評価
+
+Current conversationに結び付いたtruncatedされていない完全Titleを、reload / navigation後に再現できることをFormal Pass Criteriaの具体的評価対象とした。Production completeness、汎用waiting algorithm、long-term UI compatibility等を新しいPass条件として追加していない。
+
+### Ground Truth Reconciliation
+
+GT-A / GT-Bだけをcandidateから独立したvalidation oracleとして扱う。
+
+#### GT-A history
+
+1. Discovery時はvisible Chrome tab titleをDiscovery用GTとして使用しており、candidate familyから独立していなかった。
+2. `GT_A_GROUND_TRUTH_NOT_INDEPENDENT`としてCandidate Decisionを一度停止した。
+3. その後、ユーザーがcandidate取得前に独立expected valueとしてGT-Aを明示した。
+4. Settled T-01 / T-02 / T-04 / T-05を再比較し、cardinality、length 48、exact equality、source-internal consistency、cross-source consistencyを確認した。
+5. `GT_A_GROUND_TRUTH_RECONCILED`としてBlockingを解消した。
+
+Discovery時のlimitationとBlocking記録は履歴として有効であり、削除または後付け変更していない。後続ReconciliationによってFormal Validationで使用できるindependent oracleが成立した。
+
+#### GT-B history
+
+GT-BはDiscovery以前にユーザーが完全Titleを明示したindependent Runtime Ground Truthであり、length 12として維持した。
+
+Raw GT-A / GT-BはRuntime comparisonだけに使用し、Evidenceへ保存していない。
+
+### Source Terminology Clarification
+
+- `ActiveSidebarTitleSurface`と`DocumentTitleSurface`は、**structurally distinct DOM source groups**または**cross-source validation surfaces**と呼ぶ。
+- 両者がChatGPT内部で完全に独立したデータ生成経路を持つことは、このTechnical Spikeでは証明していない。
+- T-04 DOM text / T-05 `aria-label`は同じActive Sidebar source groupのinternal surfacesである。
+- T-01 `document.title` / T-02 `head > title`は同じDocument Title source groupのinternal surfacesである。
+- Candidateから独立したvalidation oracleはGT-A / GT-Bだけである。
+
+このclarificationはCandidate Decision v1のPrimary、cross-source check、cardinality、currentness、Fail Closed decisionを変更しない。
+
+### Formal Criteria Matrix
+
+| Criterion / Evidence item | Result | Evidence | Formal relevance |
+|---|---|---|---|
+| Current full Title completeness | **PASS** | GT-A length 48、GT-B length 12。全settled source valuesが対応GTとexact | Current conversationの完全Title取得 |
+| Initial settled | **PASS** | Title-A=`RESOLVED_CURRENT`、GT-A exact=true | Baseline acquisition |
+| Reload settled | **PASS** | Title-A=`RESOLVED_CURRENT`、GT-A exact=true | TV-002 Formal Pass |
+| A → B navigation | **PASS** | GT-B exact=true、resolved length 12、previous Aをcurrent resultとして返していない | TV-002 Formal Pass |
+| B → A navigation | **PASS** | GT-A exact=true、resolved length 48、previous Bをcurrent resultとして返していない | TV-002 Formal Pass |
+| Back A → B | **PASS** | `RESOLVED_CURRENT`、GT-B exact=true | Navigation reproducibility evidence |
+| Forward B → A | **PASS** | `RESOLVED_CURRENT`、GT-A exact=true | Navigation reproducibility evidence |
+| Direct Load | **PASS** | Title-A=`RESOLVED_CURRENT`、GT-A exact=true | Formal Criteriaを補強する追加Evidence |
+| Current-route binding | **PASS** | 全7 settled casesでtrue | Current Conversation binding evidence |
+| Sidebar source-internal equality | **PASS** | 全7 settled casesでDOM text === `aria-label` | Primary source consistency evidence |
+| Document source-internal equality | **PASS** | 全7 settled casesで`document.title` === head title | Cross-source surface consistency evidence |
+| Cross-source equality | **PASS** | 全7 settled casesでActive Sidebar value === Document Title value | Silent wrong / stale Title mitigation evidence |
+| Visual-only clipping | **PASS** | Title-A表示はclippedだがSidebar DOM text、`aria-label`、Document Titleはlength 48、GT-A exact | Complete Title evidence |
+| Transient safety | **PASS** | Reload、Direct Load、A → B、B → A直後の4 snapshotsはすべて`UNRESOLVED` / Fail Closed、誤accept 0 | FR-011 / ADR-006 supporting evidence |
+
+Technical Validation Planで明示されたreload / navigation後の一致が成立した。Back / Forward、Direct Load、transient safetyはFormal Criteriaを補強する追加Evidenceであり、新しい必須条件へ昇格させない。
+
+### Fail Closed Review
+
+#### Pure self-test
+
+次の14 caseがFail Closedすることを確認済みであり、14 / 14 PASSだった。
+
+- Active candidate 0 / 2+
+- Sidebar text empty
+- Sidebar `aria-label` empty
+- Sidebar internal mismatch
+- Current-route binding false
+- `head > title` 0 / 2+
+- Document Title empty
+- Document internal mismatch
+- Cross-source mismatch
+- Sidebar-only resolution
+- Document-only resolution
+- Known DOM-value truncation
+
+#### Live transient result
+
+- Reload直後: `UNRESOLVED` / Fail Closed
+- Direct Load直後: `UNRESOLVED` / Fail Closed
+- A → B直後: `UNRESOLVED` / Fail Closed
+- B → A直後: `UNRESOLVED` / Fail Closed
+
+Specific generic literal、previous raw Title、特定lengthをProduction currentness ruleへハードコードせず、required predicateの欠落としてrejectした。
+
+#### Ground Truth separation
+
+両DOM source groupsが同じ誤値またはtruncated valueで一致し、route bindingを含むRuntime currentness predicateだけなら成立するsynthetic caseでも、independent Runtime Ground Truthとのexact comparisonがfalseならTechnical Spike `casePass=false`となることをself-testした。
+
+Runtime currentness predicateとindependent validation oracleを混同していない。
+
+### Truncation Review
+
+- Title-Aのvisual displayはclippedしていた。
+- Sidebar DOM text、`aria-label`、Document Titleにはfull valueが存在した。
+- 各valueはlength 48でGT-A exactだった。
+- Raw visible clipping文字列からTitleを推測復元していない。
+- `DISPLAY_ONLY_TRUNCATED`はTitle value truncation failureではない。
+- DOM value自体がknown truncatedの場合はFail Closed contractを維持する。
+- General clipping detectorは実装しておらず、実装済みとは評価しない。
+
+### Known Limitations Classification
+
+**BLOCKING for TV-002 Final Verdict: none**
+
+| Known Limitation | Classification | Rationale |
+|---|---|---|
+| 2 Standard Chatsのみ | **NON-BLOCKING / DEFERRED** | Distinct long / short GTでFormal reload / navigation criteriaを満たした。追加件数はFormal条件ではない |
+| Chrome 151の1 version | **NON-BLOCKING / DEFERRED** | Current Technical Spike environmentでの成立性を評価する。将来UI compatibilityはRISK-028として残す |
+| 1 primary viewport | **NON-BLOCKING / DEFERRED** | Long Title clippingとcollapsed stateのEvidenceがあり、multi-viewportはFormal条件ではない |
+| Same-title Conversation navigation未検証 | **NON-BLOCKING / DEFERRED** | Formal matrixの異なるA / B navigationは成立。Same-title live caseは追加risk test |
+| Title rename中未検証 | **NON-BLOCKING / DEFERRED** | Rename transitionはTV-002 Formal Passに明示されていない |
+| Sidebar unloaded / virtualized未検証 | **NON-BLOCKING / DEFERRED** | Current tested UIではPrimaryが成立。一般unmount解はProduction robustness scope |
+| Additional viewport variation未検証 | **NON-BLOCKING / DEFERRED** | Formal reload / navigation後の一致を阻害するcurrent Evidenceなし |
+| Back / Forward transient state非観察 | **NON-BLOCKING / DEFERRED** | Settled Back / ForwardはPASS。APIがtransitionを隠す可能性を維持し、transient不存在とは主張しない |
+| Automated settled condition未設計 | **NON-BLOCKING / DEFERRED** | Explicit settled snapshotでFormal criteriaを評価済み。Production settled algorithmは別Decision |
+| Polling / retry / timeout未設計 | **NON-BLOCKING / DEFERRED** | Formal Title candidate取得の成立性と別のruntime orchestration concern |
+| Production selector未決定 | **NON-BLOCKING / DEFERRED** | Phase 0 Candidate / PoC validationのVerdictであり、Production実装完了を要求しない |
+| Production fallback chain未決定 | **NON-BLOCKING / DEFERRED** | Confirmed fallbackなしでFail ClosedするDecisionが成立。Fallback実装はFormal Pass条件ではない |
+| Prefix / suffix stripping未決定 | **NON-BLOCKING / DEFERRED** | Observed settled valuesにprefix / suffixなし。未観察strip ruleを作らない |
+| 2 DOM source groupsが同一誤値を返す一般runtime検出未解決 | **NON-BLOCKING / DEFERRED** | Independent GTでcurrent test casesを検証済み。Residual runtime riskはRISK-028として維持 |
+| TV-003未開始 | **NON-BLOCKING for TV-002 / BLOCKING for TASK-001 Exit** | Conversation IDは別Validation。TV-002 criteriaへ追加しない |
+
+### Historical Scope Clarification
+
+Earlier `Formal Validation Scope / Out of scope` represents the Discovery Round scope and is superseded for current status by the later approved Reconciliation, Candidate Decision, Minimal PoC, and this Final Review sections.
+
+Discovery Round時点でPoC / Final VerdictをOut of scopeとした記録は、そのRoundの境界を示す履歴として保持する。その後、明示承認を受けてGT-A Reconciliation、Candidate Decision v1、Minimal PoC v1、Final Reviewへ順次進んだ。過去sectionの削除・書き換えは行っていない。
+
+### Final Verdict
+
+**TV-002 Final Verdict: PASS**
+
+理由:
+
+- Current conversationに結び付いたfull TitleをGT-A / GT-Bとexact comparisonして取得できた。
+- Reload settled後にGT-Aへ一致した。
+- A → B / B → A navigation settled後にそれぞれcurrent GTへ一致し、previous Titleをcurrent resultとして返さなかった。
+- Back / ForwardおよびDirect Loadでもcurrent GTへ一致した。
+- Stale / generic / absentを含むtransient snapshotsをsuccessful current Titleとしてacceptしなかった。
+- Long Titleのvisual clipping時もfull DOM valueを取得し、推測復元を行わなかった。
+- Current-route binding、各source-internal consistency、cross-source consistencyを全settled casesで確認した。
+- Known LimitationsはTV-002 Formal Pass Criteriaを未成立にしない。
+
+このVerdictはCurrent Chrome / ChatGPT UIに対するPhase 0 Technical Validationの結論であり、Production selector / fallback chain、automated settled algorithm、long-term DOM compatibilityの完成を意味しない。
+
+### Requirement / ADR / Risk Impact
+
+- **FR-011**: Standard Chatの必須Title MetadataをCurrent UIから完全値として取得できる技術成立性を確認した。Required predicateを満たさないsnapshotは保存可能なTitleとして扱わない。
+- **ADR-006**: Missing、ambiguous、unbound、source-internal mismatch、cross-source mismatch、known DOM truncationをsilent acceptせずFail Closedするcontractと整合する。
+- **AT-009**: `META_TITLE_NOT_FOUND`相当へ結び付くfailure conditionsをpure self-testとlive transient Evidenceで確認した。Production error code自体は実装していない。
+- **RISK-028**: Current UIでのTitle acquisition failure / stale wrong-title riskは、route binding、structurally distinct DOM source groups、independent GT comparison、Fail Closed predicateによりTV-002範囲で軽減された。ChatGPT UI変更risk、同一誤値risk、Production orchestration riskは残存する。
+
+### TASK-001 Impact
+
+- TV-001 Standard Chat Message DOM: **PASS**
+- TV-002 Standard Chat Title: **PASS**
+- TV-003 Conversation ID: **NOT STARTED**
+- TASK-001 Final Exit: **NOT YET MET**
+
+TASK-001 ExitはStandard ChatのMessage / Title / Conversation ID取得方式をすべてPASS判定することを要求する。TV-002 PASSだけでTASK-001全体をPASSにしない。
+
+### Next Action
+
+TASK-001内の次Validationである**TV-003 Conversation ID — Standard coverage**へ進む。TV-003 Final VerdictはProject coverageを含むTASK-002完了までPENDINGとする既存方針を維持する。このFinal ReviewではTV-003の探索、PoC、Decision、Verdictを開始しない。
