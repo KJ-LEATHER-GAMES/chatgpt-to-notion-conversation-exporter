@@ -139,6 +139,18 @@ The protocol does not use current mounted count, container count, Message DOM,
 scrolling, captured union, first/last candidate discovery, runtime Message
 identity, or Completeness Signal material.
 
+## Explicit Authorization Scope
+
+The user explicitly authorized this attempt to perform at most 50 User
+submissions in the prepared Standard Chat and obtain one corresponding
+Assistant completion per submission. The authorization did not include a fresh
+Conversation restart, an additional fixture, regenerate, edit, branch,
+scrolling, Message enumeration, Discovery, or Production work.
+
+The actual attempt remained inside this boundary. It stopped before the first
+submission and did not use the authorization to retry or create another
+Conversation.
+
 ## Fail Closed Protocol
 
 The attempt must be marked `ABORTED` and cannot establish Ground Truth if any
@@ -152,24 +164,97 @@ attempt if this attempt becomes ambiguous.
 
 ## Construction Result
 
-Pending browser construction.
+`LONG_100_CONSTRUCTION: ABORTED`
+
+The construction harness evaluated Cycle 1 pre-submission UI material and
+could not establish exactly one controlled composer target in the scoped
+operation state. The Fail Closed rule was applied before fill/send.
+
+| Safe construction result | Value |
+|---|---:|
+| Attempt started | true |
+| Completed cycles | 0 |
+| Successful User submissions | 0 |
+| Unambiguous Assistant completions | 0 |
+| First successful cycle | N/A |
+| Last successful cycle | N/A |
+| Cycle 1 result | FAIL before submission |
+| Safe abort code | `CONSTRUCTION_UI_CARDINALITY_INVALID_BEFORE_SUBMISSION` |
+| Retry performed | false |
+| Fresh Conversation restart | false |
+
+No synthetic Message was submitted and no Assistant generation was started.
+No Message occurrence count was obtained from DOM or candidate material.
 
 ## Ambiguous / Failure Events
 
-Pending browser construction.
+- Construction UI target cardinality was not exactly one in the controlled
+  scoped operation state.
+- Submission success ambiguity: **NO**, because no send action occurred.
+- Duplicate submission possibility: **NO OBSERVED EXTERNAL SUBMISSION**.
+- Assistant generation start ambiguity: **N/A; generation was not initiated**.
+- Assistant completion ambiguity: **N/A; generation was not initiated**.
+- Regenerate / edit / branch / interrupted generation / unexpected extra
+  response: **NOT PERFORMED / NOT INITIATED**.
+- Construction ambiguity flag: **true** for the pre-submission UI target.
+- Abort performed: **YES**.
+
+The scoped UI relation was not broadened, no control was retried, no DOM count
+was used to repair the attempt, and no additional Message was guessed.
 
 ## Fixture Binding Result
 
-Pending browser construction. Raw Title, URL, pathname, Conversation ID, and
-other locator values will remain Runtime-only.
+- Prepared Standard Chat tab handle available: **true**.
+- Completed Long-100 Conversation available: **false**.
+- Unique completed-fixture binding established: **false**.
+- Long-100 fixture designation: **NOT_DESIGNATED**.
+
+Raw Title, URL, pathname, Conversation ID, and other locator values remained
+Runtime-only and were not persisted.
 
 ## Ground Truth Acceptance Evaluation
 
-Pending browser construction.
+| Acceptance condition | Result |
+|---|---|
+| Long-100 live fixture exists | FAIL; construction did not begin |
+| Source Type fixed as Standard | PASS as frozen construction input |
+| Unique Runtime-only completed-fixture binding | FAIL |
+| Exactly 50 User submissions | FAIL; 0 |
+| Exactly 50 Assistant completions | FAIL; 0 |
+| No count-affecting ambiguous event | FAIL; pre-submission UI target ambiguous |
+| Expected count remains 100 in frozen ledger | PASS; unchanged design oracle |
+| Expected distinct occurrence count remains 100 | PASS; unchanged design oracle |
+| First alias remains `L100-M001` | PASS; frozen ledger unchanged |
+| Last alias remains `L100-M100` | PASS; frozen ledger unchanged |
+| Alias/role rule expands exactly through 100 | PASS; pre-browser validation unchanged |
+| Ground Truth frozen before candidate observation | PASS |
+| No DOM/scroll/union/completeness-derived repair | PASS |
+| No raw locator/content persisted | PASS |
+
+The frozen design ledger remains valid for a future separately approved
+attempt, but it is not bound to a completed fixture. Construction-side
+provenance is incomplete, so Long-100 Ground Truth is not established.
 
 ## Final Status
 
-Pending browser construction.
+```text
+LONG_100_CONSTRUCTION: ABORTED
+LONG_100_SUCCESSFUL_CYCLES: 0
+LONG_100_USER_SUBMISSIONS: 0
+LONG_100_ASSISTANT_COMPLETIONS: 0
+LONG_100_FIXTURE: NOT_DESIGNATED
+LONG_100_GROUND_TRUTH: NOT_ESTABLISHED
+
+LONG_200_CONSTRUCTION: NOT_STARTED
+LONG_200_FIXTURE: NOT_DESIGNATED
+LONG_200_GROUND_TRUTH: NOT_ESTABLISHED
+
+EXISTING_LONG_CONVERSATION_ROLE: SUPPLEMENTARY_ONLY
+
+TASK-003 DISCOVERY: NOT_STARTED
+TV-005 VERDICT: NOT_SET
+TV-006 VERDICT: NOT_SET
+```
 
 ## Requirement / ADR / Risk Impact
 
@@ -185,8 +270,21 @@ Pending browser construction.
 
 ## Repository / Security Check
 
-Pending completion and direct checks.
+- `git diff --check`: **PASS**.
+- Direct trailing-whitespace scan: **PASS**.
+- Direct restricted-value/content scan: **PASS**.
+- Frozen ledger section integrity: **PASS / unchanged**.
+- Existing long Conversation qualification Evidence: unchanged.
+- `docs/`, `AGENTS.md`, `src/`, TASK-001/TASK-002 assets, and Production
+  files: unchanged.
+- Raw synthetic content, Title, URL/pathname, CID, runtime Message identity,
+  DOM/HTML, and credentials persisted: **NO**.
+- Production implementation: **none**.
 
 ## Recommended Next Action
 
-Pending construction outcome. Long-200 remains outside this Round.
+`TASK-003 Long-100 Construction Failure Review`
+
+Review the safe pre-submission composer-cardinality failure before requesting a
+new construction attempt. Do not retry the aborted attempt, create a fresh
+Conversation, or start Long-200 / Discovery without separate approval.
